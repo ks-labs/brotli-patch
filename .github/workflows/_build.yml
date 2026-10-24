@@ -61,7 +61,7 @@ jobs:
 
       - name: Buildx
         if: inputs.force || steps.exists.outputs.exists != 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Compilar, verificar e publicar
         id: build
