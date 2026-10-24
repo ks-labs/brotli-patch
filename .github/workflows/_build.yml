@@ -66,7 +66,7 @@ jobs:
       - name: Compilar, verificar e publicar
         id: build
         if: inputs.force || steps.exists.outputs.exists != 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ inputs.folder }}/Dockerfile
