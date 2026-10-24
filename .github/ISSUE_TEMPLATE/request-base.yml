@@ -1,0 +1,58 @@
+name: Pedir uma nova base
+description: Solicite a publicação do binário corrigido para outra imagem base de Node.js em fim de vida.
+title: "base: "
+labels: ["nova-base"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este projeto só publica binários para versões do Node.js **sem correção oficial** do
+        CVE-2026-111497 (12 a 20). Para 22, 24 e 26, atualize para 22.23.4, 24.22.1 ou 26.12.1.
+  - type: input
+    id: base
+    attributes:
+      label: Imagem base com tag EXATA
+      description: Por exemplo `node:18.20.8-slim`. Não use tags flutuantes como `node:18-slim`.
+      placeholder: node:18.20.8-slim
+    validations:
+      required: true
+  - type: input
+    id: node-path
+    attributes:
+      label: Caminho do node na imagem
+      description: Saída de `docker run --rm <base> sh -c 'command -v node'`.
+      placeholder: /usr/local/bin/node
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Versão do Node.js
+      description: Saída de `docker run --rm <base> node -v`.
+      placeholder: v18.20.8
+    validations:
+      required: true
+  - type: dropdown
+    id: libc
+    attributes:
+      label: Biblioteca C da base
+      options:
+        - glibc (Debian, Ubuntu)
+        - musl (Alpine)
+        - Não sei
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto
+      description: Por que você não consegue migrar para um Node.js suportado agora? (opcional, ajuda a priorizar)
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Entendo que
+      options:
+        - label: Este projeto é não oficial, sem SLA, e não corrige outras vulnerabilidades do Node.js em fim de vida.
+          required: true
+        - label: A solução definitiva é migrar para uma versão suportada do Node.js.
+          required: true

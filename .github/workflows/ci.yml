@@ -1,0 +1,49 @@
+name: ci
+
+# Validações baratas em pull requests e na main. Não compila o Node.js.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: actionlint (workflows)
+        run: docker run --rm -v "$PWD:/repo:ro" -w /repo rhysd/actionlint:latest
+
+      - name: shellcheck (scripts)
+        run: docker run --rm -v "$PWD:/mnt:ro" koalaman/shellcheck:stable /mnt/common/build-node.sh /mnt/scripts/new-base.sh
+
+      - name: hadolint (Dockerfiles)
+        run: |
+          for f in */Dockerfile; do
+            echo "== $f"
+            docker run --rm -i hadolint/hadolint < "$f"
+          done
+
+      - name: Sintaxe do verificador
+        run: node --check common/verify.js
+
+      - name: Os Dockerfiles seguem o gerador
+        run: |
+          # Cada pasta deve ser exatamente o que scripts/new-base.sh geraria.
+          for f in */Dockerfile; do
+            dir="${f%/Dockerfile}"
+            base="$(sed -n 's/^ARG BASE=//p' "$f")"
+            tag="$(sed -n 's/^# tag: *//p' "$f")"
+            path="$(sed -n 's/^ARG NODE_PATH=//p' "$f")"
+            node_v="$(sed -n 's/^ARG EXPECT_NODE=//p' "$f")"
+            cp -r . /tmp/check && rm -rf "/tmp/check/$dir" "/tmp/check/.github/workflows/$dir.yml"
+            sh /tmp/check/scripts/new-base.sh "$dir" "$base" "$tag" "$path" "$node_v" >/dev/null
+            diff -u "$f" "/tmp/check/$dir/Dockerfile"
+            diff -u ".github/workflows/$dir.yml" "/tmp/check/.github/workflows/$dir.yml"
+            rm -rf /tmp/check
+          done
