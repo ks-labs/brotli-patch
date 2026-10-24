@@ -1,0 +1,34 @@
+name: python-nodejs-python3.11-nodejs14-slim
+
+# Compila em paralelo (um runner por pasta) e publica o binário corrigido desta base.
+# Dispara quando algo da pasta, do código comum ou do workflow reutilizável muda.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'python-nodejs-python3.11-nodejs14-slim/**'
+      - 'common/**'
+      - '.github/workflows/_build.yml'
+      - '.github/workflows/python-nodejs-python3.11-nodejs14-slim.yml'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Recompilar mesmo que a tag já exista no registro
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-python-nodejs-python3.11-nodejs14-slim
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      folder: python-nodejs-python3.11-nodejs14-slim
+      force: ${{ inputs.force || false }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write

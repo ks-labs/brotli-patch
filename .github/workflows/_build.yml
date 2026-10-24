@@ -1,0 +1,88 @@
+name: build (reutilizável)
+
+# Compila e publica UMA imagem de artefato (somente o binário do node) no GHCR.
+# É chamado pelos workflows de cada pasta; não é disparado diretamente.
+on:
+  workflow_call:
+    inputs:
+      folder:
+        description: 'Pasta com o Dockerfile, por exemplo node-14.21.3-alpine'
+        type: string
+        required: true
+      force:
+        description: Recompilar mesmo que a tag já exista no registro
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ler o destino declarado no Dockerfile
+        id: meta
+        shell: bash
+        run: |
+          file="${{ inputs.folder }}/Dockerfile"
+          image="$(sed -n 's/^# image: *//p' "$file")"
+          tag="$(sed -n 's/^# tag: *//p' "$file")"
+          test -n "$image" -a -n "$tag" || { echo "Dockerfile sem '# image:' e '# tag:'" >&2; exit 1; }
+          echo "ref=${image}:${tag}" >> "$GITHUB_OUTPUT"
+          echo "### ${image}:${tag}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: A tag já existe?
+        id: exists
+        shell: bash
+        run: |
+          if docker buildx imagetools inspect "${{ steps.meta.outputs.ref }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "A tag já está publicada; nada a compilar (use 'force' para recompilar)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Buildx
+        if: inputs.force || steps.exists.outputs.exists != 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compilar, verificar e publicar
+        id: build
+        if: inputs.force || steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ inputs.folder }}/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.ref }}
+          provenance: mode=max
+          sbom: true
+
+      - name: Resumo
+        if: steps.build.outcome == 'success'
+        shell: bash
+        run: |
+          {
+            echo ""
+            echo "Digest: \`${{ steps.build.outputs.digest }}\`"
+            echo ""
+            echo "Uso: \`COPY --from=${{ steps.meta.outputs.ref }} /node <caminho do node na sua imagem>\`"
+          } >> "$GITHUB_STEP_SUMMARY"
