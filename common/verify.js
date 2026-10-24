@@ -22,8 +22,11 @@ for (const size of [0, 1, 100, 65536, 1 << 20]) {
 // 2) Caso de regressão do próprio Node.js para o CVE: troca de bloco inválida
 //    (um stream que declara um só tipo de bloco) deve ser rejeitada.
 const invalidBlockSwitch = Buffer.from('200010414141fcffff07002228f00b60f7f41f000000', 'hex');
-assert.throws(() => zlib.brotliDecompressSync(invalidBlockSwitch), /BLOCK_SWITCH/,
-  'o stream com troca de bloco inválida deveria ser rejeitado por BLOCK_SWITCH');
+// O nome do erro está em err.code (ERR_BLOCK_SWITCH no Node 14, ERR__ERROR_FORMAT_BLOCK_SWITCH
+// no Node 20); a mensagem é só "Decompression failed".
+assert.throws(() => zlib.brotliDecompressSync(invalidBlockSwitch),
+  (err) => /BLOCK_SWITCH/.test(String(err.code)),
+  'o stream com troca de bloco inválida deveria ser rejeitado com código BLOCK_SWITCH');
 
 // 3) Os demais módulos que dependem de zlib continuam funcionando.
 const text = Buffer.from('brotli-patch '.repeat(1000));
