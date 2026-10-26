@@ -1,0 +1,34 @@
+name: node-18.19.0-alpine3.17
+
+# Compila em paralelo (um runner por pasta) e publica o binário corrigido desta base.
+# Dispara quando algo da pasta, do código comum ou do workflow reutilizável muda.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'node-18.19.0-alpine3.17/**'
+      - 'common/**'
+      - '.github/workflows/_build.yml'
+      - '.github/workflows/node-18.19.0-alpine3.17.yml'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Recompilar mesmo que a tag já exista no registro
+        type: boolean
+        default: false
+
+concurrency:
+  group: build-node-18.19.0-alpine3.17
+  cancel-in-progress: false
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      folder: node-18.19.0-alpine3.17
+      force: ${{ inputs.force || false }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write

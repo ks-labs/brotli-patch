@@ -93,6 +93,8 @@ Registro: `ghcr.io/ks-labs/node`. Plataforma: **`linux/amd64`**.
 | `14.21.3-bullseye-brotli-patch` | `nikolaik/python-nodejs:python3.11-nodejs14-slim` (Debian 11) | 14.21.3 | 1.0.9 → **1.0.10** | glibc 2.31 |
 | `20.11.1-slim-brotli-patch` | `node:20.11.1-slim` (Debian 12) | 20.11.1 | 1.0.9 → **1.0.10** | glibc 2.36 |
 | `20.20.2-alpine-brotli-patch` | `node:20.20.2-alpine` | 20.20.2 | 1.1.0 → **1.1.1** | musl |
+| `20.12.2-alpine3.18-brotli-patch` | `node:20.12.2-alpine3.18` | 20.12.2 | 1.1.0 → **1.1.1** | musl |
+| `18.19.0-alpine3.17-brotli-patch` | `node:18.19.0-alpine3.17` (mesmo digest de `node:18-alpine3.17`) | 18.19.0 | 1.0.9 → **1.0.10** | musl |
 
 Cada imagem contém apenas três arquivos:
 
